@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Production Dashboard</title>
+</head>
+
+<body>
+
+    <h1>Daily Production Summary</h1>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        fetch('dashboard/summary.json')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("output").innerText = data.summary;
+            })
+            .catch(err => {
+                document.getElementById("output").innerText = "Error loading data";
+            });
+    </script>
+
+</body>
+
+</html>

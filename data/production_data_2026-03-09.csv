@@ -1,0 +1,7 @@
+timestamp,production_line,cycle_time_seconds
+2026-03-09T08:01:12,Line_A,46
+2026-03-09T08:02:10,Line_A,44
+2026-03-09T08:03:01,Line_B,35
+2026-03-09T08:04:21,Line_B,36
+2026-03-09T08:05:11,Line_C,56
+2026-03-09T08:06:45,Line_C,60
