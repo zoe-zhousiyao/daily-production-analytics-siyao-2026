@@ -1,0 +1,205 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -208
+      ],
+      "id": "3d9dd771-7085-45f2-a291-d4ee7fac047e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "bucketName": "daily-production-analytics-siyao-2026",
+        "fileKey": "processed/production_data_2026-03-09.json"
+      },
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        -208
+      ],
+      "id": "82dd49b2-f9c6-482a-9703-ed7906eef9b2",
+      "name": "Download a file",
+      "credentials": {
+        "aws": {
+          "id": "iTk847C7VTH1Zvd4",
+          "name": "AWS (IAM) account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst jsonString = buffer.toString('utf-8');\nconst data = JSON.parse(jsonString);\n\nconst lines = Array.isArray(data.lines) ? data.lines : [];\n\nlet summary = \"Production Analysis:\\n\";\n\nfor (const line of lines) {\n  summary += `- ${line.production_line}: ${line.status}, avg cycle time ${line.average_cycle_time_seconds}s\\n`;\n}\n\nreturn [\n  {\n    json: {\n      source_file: data.source_file,\n      processed_at: data.processed_at,\n      invalid_rows: data.invalid_rows ?? 0,\n      lines: lines,\n      prompt: `\nYou are a factory operations analyst.\n\nAnalyze the production data and return a concise summary in EXACTLY this format:\n\n- Overall: <short sentence>\n- Best Line: <line name + reason>\n- Worst Line: <line name + reason>\n- Action: <one recommendation>\n\nProduction data:\n${summary}\n`\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a9bb7af2-9f47-49dc-8c57-589362f1a714",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst jsonString = buffer.toString('utf-8');\nconst data = JSON.parse(jsonString);\n\nreturn [\n  {\n    json: data\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        64
+      ],
+      "id": "475af9da-f3b3-406b-8639-d3e1c401b3bd",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{$json.prompt}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        16
+      ],
+      "id": "8e614542-6a78-4f10-bc7f-554e08c592d0",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "o2tzYV2fqBCJESRr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json.output[0].content[0].text;\n\nconst dashboardData = {\n  summary: result,\n  timestamp: new Date().toISOString(),\n  date: new Date().toISOString().split('T')[0],\n  source: \"production_data\"\n};\n\nreturn [\n  {\n    json: dashboardData,\n    binary: {\n      data: await this.helpers.prepareBinaryData(\n        Buffer.from(JSON.stringify(dashboardData, null, 2)),\n        \"summary.json\",\n        \"application/json\"\n      )\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        16
+      ],
+      "id": "7d16f33c-785b-4940-9136-dc156a8473ec",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "daily-production-analytics-siyao-2026",
+        "fileName": "dashboard/summary.json",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        624,
+        16
+      ],
+      "id": "31dfdb61-b864-41f5-be46-fc4be85e669a",
+      "name": "Upload a file",
+      "credentials": {
+        "aws": {
+          "id": "iTk847C7VTH1Zvd4",
+          "name": "AWS (IAM) account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download a file": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5060d638-6b30-4441-9c41-e83e12067f09",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d0a9567df9ddd8cac4562b73025de07d94cf0cd4b6c4d0cab5a119b518ecea6c"
+  },
+  "id": "KVnxMkhj3QRSOk1a",
+  "tags": []
+}
