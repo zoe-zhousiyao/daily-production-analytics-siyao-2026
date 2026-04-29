@@ -60,18 +60,3 @@ The automation pipeline is implemented using n8n.
 
 Workflow file:
 n8n/workflow.json
-
-### How to use:
-1. Open n8n
-2. Click "Import from file"
-3. Select workflow.json
-
-How to Run
-1. start n8n : n8n start
-2. configure:
-AWS credentials
-OpenAI API key
-3. upload S3 file path: 
-processed/production_data_YYYY-MM-DD.json
-4. Click:
-Execute workflow
